@@ -1,0 +1,27 @@
+{
+  "name": "full-auth-practice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adarsh-279/Full-Auth-Practice.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/adarsh-279/Full-Auth-Practice/issues"
+  },
+  "homepage": "https://github.com/adarsh-279/Full-Auth-Practice#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.3.0",
+    "morgan": "^1.10.1"
+  }
+}
