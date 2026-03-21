@@ -16,7 +16,7 @@ async function registerController(req, res) {
     const userExists = await userModel.findOne({ email })
 
     if (userExists) {
-        return res.status(400).json({
+        return res.status(409).json({
             message: "Account already exists with this email"
         })
     }
@@ -162,9 +162,11 @@ async function loginController(req, res) {
         {expiresIn: "7d"}
     )
 
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+
     const session = await sessionModel.create({
         user: user._id,
-        refreshToken,
+        refreshToken: refreshTokenHash,
         ip: req.ip,
         userAgent: req.headers["user-agent"]
     });
@@ -199,8 +201,8 @@ async function getMeController(req, res) {
 
     if (!token) {
         return res.status(401).json({
-            message: "Token not found"
-        })
+            message: "Unauthorized. Login first!",
+        });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
@@ -208,7 +210,7 @@ async function getMeController(req, res) {
     const user = await userModel.findById(decoded.id)
 
     if (!user) {
-        return res.status(400).json({
+        return res.status(401).json({
             message: "Unauthorized. Login first!"
         })
     }
@@ -228,9 +230,9 @@ async function logoutController(req, res) {
     const refreshToken = req.cookies.refreshToken
 
     if (!refreshToken) {
-        return res.status(400).json({
-            message: "Refresh token not found"
-        })
+        return res.status(401).json({
+            message: "Unauthorized. Login first!",
+        });
     }
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET)
 
@@ -240,16 +242,16 @@ async function logoutController(req, res) {
     })
 
     if (!session) {
-        return res.status(400).json({
-            message: "Invalid session"
+        return res.status(401).json({
+            message: "Invalid session. Login first!"
         })
     }
 
     const matchToken = await bcrypt.compare(refreshToken, session.refreshToken)
 
     if (!matchToken) {
-        return res.status(400).json({
-            message: "Invalid refresh token"
+        return res.status(401).json({
+            message: "Invalid refresh token. Login first!"
         })
     }
 
@@ -259,7 +261,33 @@ async function logoutController(req, res) {
     res.clearCookie("refreshToken")
 
     return res.status(200).json({
-        message: "User logged out sucessfully"
+        message: "Logged out sucessfully"
+    })
+}
+
+async function logoutAllController(req, res) {
+
+    const refreshToken = req.cookies.refreshToken
+
+    if (!refreshToken) {
+        return res.status(401).json({
+            message: "Unauthorized. Login first!"
+        })
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET)
+
+    await sessionModel.updateMany({
+        user: decoded.id,
+        revoked: false
+    }, {
+        revoked: true
+    })
+
+    res.clearCookie("refreshToken")
+
+    return res.status(200).json({
+        message: "Logged out from all devices"
     })
 }
 
@@ -270,4 +298,5 @@ export default {
     loginController,
     getMeController,
     logoutController,
+    logoutAllController,
 }
